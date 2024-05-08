@@ -1,51 +1,45 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import streamlit as st
-from streamlit.logger import get_logger
+from collections import deque
 
-LOGGER = get_logger(__name__)
+def shortest_path_to_range(A, B, C):
+    queue = deque([(A, 0, [])])  # 存储当前值、步数和操作列表
+    visited = set()  # 防止重复处理相同的值
+    operations = list(range(1, 10))  # 定义1到9的操作数
 
+    while queue:
+        current, steps, path = queue.popleft()
+        
+        # 检查当前数值是否在区间内
+        if B <= current <= C:
+            return steps, path
+        
+        for op in operations:
+            # 尝试所有加减乘除操作，并记录每一步的操作
+            next_steps = [
+                (current + op, f"{current} + {op} = {current + op}"),
+                (current - op, f"{current} - {op} = {current - op}"),
+                (current * op, f"{current} * {op} = {current * op}"),
+                (current // op if op != 0 else None, f"{current} // {op} = {current // op}" if op != 0 else None)
+            ]
+            for result, desc in next_steps:
+                if result is not None and result not in visited:
+                    visited.add(result)
+                    queue.append((result, steps + 1, path + [desc]))
+    
+    return -1, []  # 如果没有找到任何解决方案
 
-def run():
-    st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
-    )
+# 使用 Streamlit 的输入组件获取参数
+A = st.number_input("请输入初始值 A: ", step=1)
+B = st.number_input("请输入区间下限 B: ", step=1)
+C = st.number_input("请输入区间上限 C: ", step=1)
 
-    st.write("# Welcome to Streamlit! 👋")
+# 输出结果
+steps, path = shortest_path_to_range(A, B, C)
+if steps != -1:
+    st.write(f"从 {A} 到区间 [{B}, {C}] 的最短路径需要 {steps} 步")
+    st.write("操作步骤如下：")
+    for p in path:
+        st.write(p)
+else:
+    st.write(f"没有找到从 {A} 到区间 [{B}, {C}] 的路径。")
 
-    st.sidebar.success("Select a demo above.")
-
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
-
-
-if __name__ == "__main__":
-    run()
